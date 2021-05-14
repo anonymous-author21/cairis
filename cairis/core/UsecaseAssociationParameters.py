@@ -16,25 +16,19 @@
 #  under the License.
 
 
-__author__ = 'Shamal Faily'
+from . import ObjectCreationParameters
 
+__author__ = 'Amna Altaf'
 
-from .EnvironmentProperties import EnvironmentProperties
-from .Steps import Steps
+class UsecaseAssociationParameters(ObjectCreationParameters.ObjectCreationParameters):
+  def __init__(self,envName,ucName,subUcName='',rationale=''):
+    ObjectCreationParameters.ObjectCreationParameters.__init__(self)
+    self.theEnvironmentName = envName
+    self.theUsecase = ucName
+    self.theSubUsecase = subUcName
+    self.theRationale = rationale
 
-class UseCaseEnvironmentProperties(EnvironmentProperties):
-  def __init__(self,environmentName,preCond='',steps = None,postCond='',cAttributes=[0,0,0,0,0],caRationale=[None,None,None,None,None]):
-    EnvironmentProperties.__init__(self,environmentName)
-    self.thePreCond = preCond
-    self.theSteps = steps
-    self.thePostCond = postCond
-    self.theAttributes = cAttributes
-    self.theRationale = caRationale
-    self.theAverage = 0
-
-  def preconditions(self): return self.thePreCond
-  def steps(self): return self.theSteps
-  def postconditions(self): return self.thePostCond
-  def attributes(self): return self.theAttributes
+  def environment(self): return self.theEnvironmentName
+  def usecase(self): return self.theUsecase
+  def subUsecase(self): return self.theSubUsecase
   def rationale(self): return self.theRationale
-  def average(self): return self.theAverage
