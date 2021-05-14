@@ -142,7 +142,6 @@ class GoalsContentHandler(ContentHandler,EntityResolver):
     self.theDefinition = ''
     self.theConcerns = []
     self.theConcernAssociations = []
-    self.thePolicy = None
 
   def resetObstacleEnvironmentAttributes(self):
     self.inDefinition = 0
@@ -200,7 +199,13 @@ class GoalsContentHandler(ContentHandler,EntityResolver):
     self.theExcCat = ''
     self.inDefinition = 0
     self.theDefinition = ''
-
+    self.theCognitiveAttribute = {}
+    self.theCognitiveAttribute['vigilance'] = (0,'None')
+    self.theCognitiveAttribute['situation awareness'] = (0,'None')
+    self.theCognitiveAttribute['stress'] = (0,'None')
+    self.theCognitiveAttribute['workload'] = (0,'None')
+    self.theCognitiveAttribute['risk awareness'] = (0,'None')
+    
   def resetCountermeasureAttributes(self):
     self.theName = ''
     self.theType = ''
@@ -267,8 +272,6 @@ class GoalsContentHandler(ContentHandler,EntityResolver):
       self.theConcerns.append(attrs['name'])
     elif name == 'concern_association':
       self.theConcernAssociations.append((attrs['source_name'],a2s(attrs['source_nry']),attrs['link_name'],attrs['target_name'],a2s(attrs['target_nry'])))
-    elif name == 'policy':
-      self.thePolicy = {'theGoalName' : self.theName, 'theEnvironmentName' : self.theEnvironmentName, 'theSubject' : attrs['subject'], 'theAccessType' : attrs['access'], 'theResource' : attrs['resource'], 'thePermission' : attrs['permission']}
     elif name == 'requirement':
       self.theReference = attrs['reference']
       if (self.theReference in self.theReferenceLabelDictionary):
@@ -381,7 +384,7 @@ class GoalsContentHandler(ContentHandler,EntityResolver):
       self.theDomainProperties.append(p)
       self.resetDomainPropertyAttributes()
     elif name == 'goal_environment':
-      p = GoalEnvironmentProperties(self.theEnvironmentName,'',unescape(self.theDefinition),self.theCategory,self.thePriority,unescape(self.theFitCriterion),unescape(self.theIssue),[],[],self.theConcerns,self.theConcernAssociations,self.thePolicy)
+      p = GoalEnvironmentProperties(self.theEnvironmentName,'',unescape(self.theDefinition),self.theCategory,self.thePriority,unescape(self.theFitCriterion),unescape(self.theIssue),[],[],self.theConcerns,self.theConcernAssociations)
       self.theEnvironmentProperties.append(p)
       self.resetGoalEnvironmentAttributes()
     elif name == 'obstacle_environment':
@@ -400,8 +403,8 @@ class GoalsContentHandler(ContentHandler,EntityResolver):
       self.resetObstacleAttributes()
     elif name == 'requirement':
       reqId = self.dbProxy.newId()
-      r = cairis.core.RequirementFactory.build(reqId,self.theLabel,unescape(self.theName),unescape(self.theDescription),self.thePriority,unescape(self.theRationale),unescape(self.theFitCriterion),unescape(self.theOriginator),self.theType,self.theReference,self.theReferenceType)
-      self.theRequirements.append(r)
+      r = cairis.core.RequirementFactory.build(reqId,self.theLabel,unescape(self.theName),unescape(self.theDescription),self.thePriority,unescape(self.theRationale),unescape(self.theFitCriterion),unescape(self.theOriginator),self.theType,self.theReference)
+      self.theRequirements.append((r,self.theReference,self.theReferenceType))
       self.resetRequirementAttributes()
     elif name == 'exception':
       self.theCurrentStep.addException((self.theExcName,self.theExcType.lower(),self.theExcValue,self.theExcCat,unescape(self.theDefinition)))
@@ -410,7 +413,12 @@ class GoalsContentHandler(ContentHandler,EntityResolver):
       self.theSteps.append(self.theCurrentStep)
       self.theCurrentStep = None
     elif name == 'usecase_environment':
-      p = UseCaseEnvironmentProperties(self.theEnvironmentName,unescape(self.thePreconditions),self.theSteps,unescape(self.thePostconditions))
+      vProperty,vRationale = self.theCognitiveAttribute['vigilance']
+      saProperty,saRationale = self.theCognitiveAttribute['situation awareness']
+      sProperty,sRationale = self.theCognitiveAttribute['stress']
+      wProperty,wRationale = self.theCognitiveAttribute['workload']
+      raProperty,raRationale = self.theCognitiveAttribute['risk awareness']
+      p = UseCaseEnvironmentProperties(self.theEnvironmentName,unescape(self.thePreconditions),self.theSteps,unescape(self.thePostconditions),[vProperty,saProperty,sProperty,wProperty,raProperty],[vRationale,saRationale,sRationale,wRationale,raRationale])
       self.theEnvironmentProperties.append(p)
       self.resetUseCaseEnvironmentAttributes()
     elif name == 'usecase':
