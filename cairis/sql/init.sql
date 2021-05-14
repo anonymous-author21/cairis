@@ -63,13 +63,6 @@ DROP VIEW IF EXISTS personal_risk;
 DROP VIEW IF EXISTS goal_associations;
 DROP VIEW IF EXISTS riskModel_tagged;
 DROP VIEW IF EXISTS conceptMapModel_all;
-
-DROP TABLE IF EXISTS policy_statement;
-DROP TABLE IF EXISTS access_type;
-DROP TABLE IF EXISTS access_permission;
-DROP TABLE IF EXISTS userstory_tag;
-DROP TABLE IF EXISTS userstory_acceptance_criteria;
-DROP TABLE IF EXISTS userstory;
 DROP TABLE IF EXISTS task_goal_contribution;
 DROP TABLE IF EXISTS trust_boundary_usecase;
 DROP TABLE IF EXISTS trust_boundary_asset;
@@ -93,7 +86,6 @@ DROP TABLE IF EXISTS asset_instance;
 DROP TABLE IF EXISTS location_link;
 DROP TABLE IF EXISTS location;
 DROP TABLE IF EXISTS locations;
-
 DROP TABLE IF EXISTS usecase_step_synopsis;
 DROP TABLE IF EXISTS usecase_pc_contribution;
 DROP TABLE IF EXISTS usecase_tc_contribution;
@@ -123,7 +115,6 @@ DROP TABLE IF EXISTS obstacle_tag;
 DROP TABLE IF EXISTS domainproperty_tag;
 DROP TABLE IF EXISTS countermeasure_tag;
 DROP TABLE IF EXISTS response_tag;
-
 DROP TABLE IF EXISTS component_view_component;
 DROP TABLE IF EXISTS connector;
 DROP TABLE IF EXISTS component_view;
@@ -140,7 +131,6 @@ DROP TABLE IF EXISTS component_template_requirement;
 DROP TABLE IF EXISTS component_template_goal;
 DROP TABLE IF EXISTS component_vulnerability_target;
 DROP TABLE IF EXISTS component_threat_target;
-
 DROP TABLE IF EXISTS document_reference_vulnerability;
 DROP TABLE IF EXISTS document_reference_obstacle;
 DROP TABLE IF EXISTS ice_ic_contribution;
@@ -236,6 +226,7 @@ DROP TABLE IF EXISTS domainproperty_asset;
 DROP TABLE IF EXISTS environment_obstacle;
 DROP TABLE IF EXISTS obstacle_label;
 DROP TABLE IF EXISTS obstacle_definition;
+DROP TABLE IF EXISTS usecase_definition;
 DROP TABLE IF EXISTS obstacle_category;
 DROP TABLE IF EXISTS obstacle_concern;
 DROP TABLE IF EXISTS requirement_task;
@@ -325,6 +316,8 @@ DROP TABLE IF EXISTS usecase_conditions;
 DROP TABLE IF EXISTS usecase_step_tag;
 DROP TABLE IF EXISTS usecase_step;
 DROP TABLE IF EXISTS usecase_role;
+DROP TABLE IF EXISTS usecase_property;
+DROP TABLE IF EXISTS usecase_usecaseassociation;
 DROP TABLE IF EXISTS usecase;
 DROP TABLE IF EXISTS component;
 DROP TABLE IF EXISTS reference_type;
@@ -405,6 +398,8 @@ DROP TABLE IF EXISTS asset_value;
 DROP TABLE IF EXISTS environment;
 DROP TABLE IF EXISTS security_property;
 DROP TABLE IF EXISTS security_property_value;
+DROP TABLE IF EXISTS cognitive_attribute;
+DROP TABLE IF EXISTS cognitive_attribute_value;
 DROP TABLE IF EXISTS securityusability_property_value;
 DROP TABLE IF EXISTS countermeasure_value;
 DROP TABLE IF EXISTS threat_value;
@@ -611,6 +606,16 @@ CREATE TABLE security_property_value (
   name VARCHAR(50) NOT NULL,
   PRIMARY KEY(id)
 ) ENGINE=INNODB; 
+CREATE TABLE cognitive_attribute (
+  id INT NOT NULL,
+  name VARCHAR(50) NOT NULL,
+  PRIMARY KEY(id)
+) ENGINE=INNODB;
+CREATE TABLE cognitive_attribute_value (
+  id INT NOT NULL,
+  name VARCHAR(50) NOT NULL,
+  PRIMARY KEY(id)
+) ENGINE=INNODB;
 CREATE TABLE securityusability_property_value (
   id INT NOT NULL,
   name VARCHAR(50) NOT NULL,
@@ -669,8 +674,8 @@ CREATE TABLE multiplicity_type (
   head_id INT NOT NULL,
   head_association_type_id INT NOT NULL,
   head_multiplicity_id INT NOT NULL,
-  head_role_name VARCHAR(200) NOT NULL,
-  tail_role_name VARCHAR(200) NOT NULL,
+  head_role_name VARCHAR(50) NOT NULL,
+  tail_role_name VARCHAR(50) NOT NULL,
   tail_multiplicity_id INT NOT NULL,
   tail_association_type_id INT NOT NULL,
   tail_id INT NOT NULL,
@@ -968,6 +973,18 @@ CREATE TABLE usecase (
   author VARCHAR(255) NOT NULL,
   description VARCHAR(2000) NOT NULL,
   PRIMARY KEY(id)
+) ENGINE=INNODB;
+CREATE TABLE usecase_property(
+  usecase_id INT NOT NULL,
+  environment_id INT NOT NULL,
+  property_id INT NOT NULL,
+  property_value_id INT NOT NULL,
+  property_rationale varchar(4000),
+  PRIMARY KEY(usecase_id,environment_id,property_id),
+  FOREIGN KEY(usecase_id) REFERENCES usecase(id),
+  FOREIGN KEY(environment_id) REFERENCES environment(id),
+  FOREIGN KEY(property_id) REFERENCES cognitive_attribute(id),
+  FOREIGN KEY(property_value_id) REFERENCES cognitive_attribute_value(id)
 ) ENGINE=INNODB;
 CREATE TABLE requirement_requirement (
   from_id INT NOT NULL,
@@ -1418,6 +1435,14 @@ CREATE TABLE obstacle_definition (
   FOREIGN KEY(obstacle_id) REFERENCES obstacle(id),
   FOREIGN KEY(environment_id) REFERENCES environment(id)
 ) ENGINE=INNODB;
+CREATE TABLE usecase_definition (
+  usecase_id INT NOT NULL,
+  environment_id INT NOT NULL,
+  average FLOAT DEFAULT 0,
+  PRIMARY KEY(usecase_id,environment_id),
+  FOREIGN KEY(usecase_id) REFERENCES usecase(id),
+  FOREIGN KEY(environment_id) REFERENCES environment(id)
+) ENGINE=INNODB;
 CREATE TABLE obstacle_category (
   obstacle_id INT NOT NULL,
   environment_id INT NOT NULL,
@@ -1561,6 +1586,17 @@ CREATE TABLE goalgoal_goalassociation (
   FOREIGN KEY(goal_id) REFERENCES goal(id),
   FOREIGN KEY(ref_type_id) REFERENCES reference_type(id),
   FOREIGN KEY(subgoal_id) REFERENCES goal(id)
+) ENGINE=INNODB;
+CREATE TABLE usecase_usecaseassociation (
+  id INT NOT NULL,
+  environment_id INT NOT NULL,
+  usecase_id INT NOT NULL,
+  subUsecase_id INT NOT NULL,
+  rationale VARCHAR(1000) NOT NULL,
+  PRIMARY KEY(id),
+  FOREIGN KEY(environment_id) REFERENCES environment(id),
+  FOREIGN KEY(usecase_id) REFERENCES usecase(id),
+  FOREIGN KEY(subUsecase_id) REFERENCES usecase(id)
 ) ENGINE=INNODB;
 CREATE TABLE goalrequirement_goalassociation (
   id INT NOT NULL,
@@ -2078,8 +2114,8 @@ CREATE TABLE securitypattern_classassociation (
   head_id INT NOT NULL,
   head_association_type_id INT NOT NULL,
   head_multiplicity_id INT NOT NULL,
-  head_role_name VARCHAR(200) NOT NULL,
-  tail_role_name VARCHAR(200) NOT NULL,
+  head_role_name VARCHAR(50) NOT NULL,
+  tail_role_name VARCHAR(50) NOT NULL,
   tail_multiplicity_id INT NOT NULL,
   tail_association_type_id INT NOT NULL,
   tail_id INT NOT NULL,
@@ -2909,8 +2945,8 @@ CREATE TABLE component_classassociation (
   head_association_type_id INT NOT NULL,
   head_navigation INT NOT NULL default 0,
   head_multiplicity_id INT NOT NULL,
-  head_role_name VARCHAR(200) NOT NULL,
-  tail_role_name VARCHAR(200) NOT NULL,
+  head_role_name VARCHAR(50) NOT NULL,
+  tail_role_name VARCHAR(50) NOT NULL,
   tail_multiplicity_id INT NOT NULL,
   tail_navigation INT NOT NULL default 0,
   tail_association_type_id INT NOT NULL,
@@ -3528,63 +3564,6 @@ CREATE TABLE document_reference_obstacle (
   FOREIGN KEY(obstacle_id) REFERENCES obstacle(id)
 ) ENGINE=INNODB; 
 
-CREATE TABLE userstory (
-  id INT NOT NULL,
-  name VARCHAR(200) NOT NULL,
-  author VARCHAR(200) NOT NULL,
-  role_id INT NOT NULL,
-  description VARCHAR(2000) NOT NULL,
-  usergoal_id INT NOT NULL,
-  PRIMARY KEY(id),
-  FOREIGN KEY(role_id) REFERENCES role(id)
-) ENGINE=INNODB;
-
-CREATE TABLE userstory_acceptance_criteria (
-  id INT NOT NULL,
-  userstory_id INT NOT NULL,
-  criteria VARCHAR(2000) NOT NULL,
-  PRIMARY KEY(id),
-  FOREIGN KEY(userstory_id) REFERENCES userstory(id)
-) ENGINE=INNODB;
-
-CREATE TABLE userstory_tag (
-  userstory_id INT NOT NULL,
-  tag_id INT NOT NULL,
-  PRIMARY KEY(userstory_id,tag_id),
-  FOREIGN KEY(userstory_id) REFERENCES userstory(id), 
-  FOREIGN KEY(tag_id) REFERENCES tag(id)
-) ENGINE=INNODB;
-
-CREATE TABLE access_permission (
-  id INT NOT NULL,
-  name varchar(200) NOT NULL,
-  PRIMARY KEY(id)
-) ENGINE=INNODB;
-
-CREATE TABLE access_type (
-  id INT NOT NULL,
-  name varchar(200) NOT NULL,
-  short_code varchar(1) NOT NULL,
-  PRIMARY KEY(id)
-) ENGINE=INNODB;
-
-CREATE TABLE policy_statement (
-  id INT NOT NULL,
-  goal_id INT NOT NULL,
-  environment_id INT NOT NULL,
-  subject_id INT NOT NULL,
-  access_id INT NOT NULL,
-  resource_id INT NOT NULL,
-  permission_id INT NOT NULL,
-  PRIMARY KEY(id),
-  FOREIGN KEY(goal_id) REFERENCES goal(id), 
-  FOREIGN KEY(environment_id) REFERENCES environment(id), 
-  FOREIGN KEY(subject_id) REFERENCES asset(id), 
-  FOREIGN KEY(resource_id) REFERENCES asset(id), 
-  FOREIGN KEY(access_id) REFERENCES access_type(id), 
-  FOREIGN KEY(permission_id) REFERENCES access_permission(id)
-) ENGINE=INNODB;
-
 delimiter //
 
 create function internalDocumentQuotationString(idName text, startIdx int, endIdx int) 
@@ -4171,19 +4150,19 @@ CREATE VIEW misusability_case as
 CREATE VIEW quotation as
    select c.name code,'internal_document' artifact_type,ind.name artifact_name,'None' section,idc.start_index,idc.end_index,internalDocumentQuotationString(ind.name,idc.start_index,idc.end_index) quote,idc.synopsis,idc.label from code c, internal_document ind, internal_document_code idc where c.id = idc.code_id and ind.id = idc.internal_document_id
    union
-   select c.name code,'persona' artifact_type,p.name artifact_name,'Activities' section,pc.start_index,pc.end_index,personaQuotationString(p.name,'activities','',pc.start_index,pc.end_index) quote,pc.synopsis,pc.label from code c, persona p, persona_code pc where c.id = pc.code_id and p.id = pc.persona_id
+   select c.name code,'persona' artifact_type,p.name artifact_name,'Activities' section,pc.start_index,pc.end_index,personaQuotationString(p.name,'activities',pc.start_index,pc.end_index) quote,pc.synopsis,pc.label from code c, persona p, persona_code pc where c.id = pc.code_id and p.id = pc.persona_id
    union
-   select c.name code,'persona' artifact_type,p.name artifact_name,'Attitudes' section,pc.start_index,pc.end_index,personaQuotationString(p.name,'attitudes','',pc.start_index,pc.end_index) quote,pc.synopsis,pc.label from code c, persona p, persona_code pc where c.id = pc.code_id and p.id = pc.persona_id
+   select c.name code,'persona' artifact_type,p.name artifact_name,'Attitudes' section,pc.start_index,pc.end_index,personaQuotationString(p.name,'attitudes',pc.start_index,pc.end_index) quote,pc.synopsis,pc.label from code c, persona p, persona_code pc where c.id = pc.code_id and p.id = pc.persona_id
    union
-   select c.name code,'persona' artifact_type,p.name artifact_name,'Aptitudes' section,pc.start_index,pc.end_index,personaQuotationString(p.name,'attitudes','',pc.start_index,pc.end_index) quote,pc.synopsis,pc.label from code c, persona p, persona_code pc where c.id = pc.code_id and p.id = pc.persona_id
+   select c.name code,'persona' artifact_type,p.name artifact_name,'Aptitudes' section,pc.start_index,pc.end_index,personaQuotationString(p.name,'attitudes',pc.start_index,pc.end_index) quote,pc.synopsis,pc.label from code c, persona p, persona_code pc where c.id = pc.code_id and p.id = pc.persona_id
    union
-   select c.name code,'persona' artifact_type,p.name artifact_name,'Motivations' section,pc.start_index,pc.end_index,personaQuotationString(p.name,'motivations','',pc.start_index,pc.end_index) quote,pc.synopsis,pc.label from code c, persona p, persona_code pc where c.id = pc.code_id and p.id = pc.persona_id
+   select c.name code,'persona' artifact_type,p.name artifact_name,'Motivations' section,pc.start_index,pc.end_index,personaQuotationString(p.name,'motivations',pc.start_index,pc.end_index) quote,pc.synopsis,pc.label from code c, persona p, persona_code pc where c.id = pc.code_id and p.id = pc.persona_id
    union
-   select c.name code,'persona' artifact_type,p.name artifact_name,'Skills' section,pc.start_index,pc.end_index,personaQuotationString(p.name,'skills','',pc.start_index,pc.end_index) quote,pc.synopsis,pc.label from code c, persona p, persona_code pc where c.id = pc.code_id and p.id = pc.persona_id
+   select c.name code,'persona' artifact_type,p.name artifact_name,'Skills' section,pc.start_index,pc.end_index,personaQuotationString(p.name,'skills',pc.start_index,pc.end_index) quote,pc.synopsis,pc.label from code c, persona p, persona_code pc where c.id = pc.code_id and p.id = pc.persona_id
    union
-   select c.name code,'persona' artifact_type,p.name artifact_name,'Intrinsic' section,pc.start_index,pc.end_index,personaQuotationString(p.name,'intrinsic','',pc.start_index,pc.end_index) quote,pc.synopsis,pc.label from code c, persona p, persona_code pc where c.id = pc.code_id and p.id = pc.persona_id
+   select c.name code,'persona' artifact_type,p.name artifact_name,'Intrinsic' section,pc.start_index,pc.end_index,personaQuotationString(p.name,'intrinsic',pc.start_index,pc.end_index) quote,pc.synopsis,pc.label from code c, persona p, persona_code pc where c.id = pc.code_id and p.id = pc.persona_id
    union
-   select c.name code,'persona' artifact_type,p.name artifact_name,'Contextual' section,pc.start_index,pc.end_index,personaQuotationString(p.name,'contextual','',pc.start_index,pc.end_index) quote,pc.synopsis,pc.label from code c, persona p, persona_code pc where c.id = pc.code_id and p.id = pc.persona_id order by 1;
+   select c.name code,'persona' artifact_type,p.name artifact_name,'Contextual' section,pc.start_index,pc.end_index,personaQuotationString(p.name,'contextual',pc.start_index,pc.end_index) quote,pc.synopsis,pc.label from code c, persona p, persona_code pc where c.id = pc.code_id and p.id = pc.persona_id order by 1;
 
 CREATE VIEW personal_information as
   select a.id asset_id, rar.environment_id environment_id from asset a, asset_type at, roleassetrole_dependency rar,role dr, role_type drt, role de, role_type det where rar.dependency_id = a.id and rar.depender_id = dr.id and dr.role_type_id = drt.id and drt.name = 'Data Controller' and rar.dependee_id = de.id and de.role_type_id = det.id and det.name = 'Data Subject' and a.asset_type_id = at.id and at.name = 'Information';
@@ -4298,7 +4277,10 @@ CREATE VIEW conceptMapModel_all as
   select fr.name from_name, tr.name to_name, rr.label,fa.name from_objt,te.name to_objt from requirement fr, requirement tr, requirement_requirement rr, asset_requirement far, asset fa, environment_asset fea, environment_requirement ter, environment te where rr.from_id = fr.id and fr.version = (select max(i.version) from requirement i where i.id = fr.id) and fr.id = far.requirement_id and far.asset_id = fa.id and fa.id = fea.asset_id and rr.to_id = tr.id and tr.version = (select max(i.version) from requirement i where i.id = tr.id) and tr.id = ter.requirement_id and ter.environment_id = te.id order by 1,2;
 
 
-INSERT INTO version (major,minor,patch) VALUES (2,3,8);
+
+
+
+INSERT INTO version (major,minor,patch) VALUES (2,3,3);
 INSERT INTO attributes (id,name) VALUES (103,'did');
 INSERT INTO trace_dimension values (0,'requirement');
 INSERT INTO trace_dimension values (1,'persona');
@@ -4390,6 +4372,10 @@ INSERT INTO security_property_value values (0,'None');
 INSERT INTO security_property_value values (1,'Low');
 INSERT INTO security_property_value values (2,'Medium');
 INSERT INTO security_property_value values (3,'High');
+INSERT INTO cognitive_attribute_value values (0,'None');
+INSERT INTO cognitive_attribute_value values (1,'Low');
+INSERT INTO cognitive_attribute_value values (2,'Medium');
+INSERT INTO cognitive_attribute_value values (3,'High');
 INSERT INTO securityusability_property_value values (-3,'High Help');
 INSERT INTO securityusability_property_value values (-2,'Medium Help');
 INSERT INTO securityusability_property_value values (-1,'Low Help');
@@ -4405,6 +4391,11 @@ INSERT INTO security_property values (4,'Anonymity');
 INSERT INTO security_property values (5,'Pseudonymity');
 INSERT INTO security_property values (6,'Unlinkability');
 INSERT INTO security_property values (7,'Unobservability');
+INSERT INTO cognitive_attribute values (0,'Vigilance');
+INSERT INTO cognitive_attribute values (1,'Situation Awareness');
+INSERT INTO cognitive_attribute values (2,'Workload');
+INSERT INTO cognitive_attribute values (3,'Stress');
+INSERT INTO cognitive_attribute values (4,'Risk Awareness');
 INSERT INTO allowable_trace values(0,2);
 INSERT INTO allowable_trace values(2,6);
 INSERT INTO allowable_trace values(0,6);
@@ -4542,7 +4533,6 @@ INSERT INTO role_type(id,name) values(1,'Attacker');
 INSERT INTO role_type(id,name) values(2,'Data Controller');
 INSERT INTO role_type(id,name) values(3,'Data Processor');
 INSERT INTO role_type(id,name) values(4,'Data Subject');
-INSERT INTO role_type(id,name) values(5,'Machine');
 INSERT INTO behavioural_variable(id,name) values (0,'Activities');
 INSERT INTO behavioural_variable(id,name) values (1,'Attitudes');
 INSERT INTO behavioural_variable(id,name) values (2,'Aptitudes');
@@ -4605,8 +4595,3 @@ INSERT INTO stpa_keyword values(4,'provides out of order','Incorrect timing / or
 INSERT INTO stpa_keyword values(5,'stopped too soon','Stopped too soon / applied to long');
 INSERT INTO stpa_keyword values(6,'applied too long','Stopped too soon / applied to long');
 INSERT INTO stpa_keyword values(7,'not applicable','Not applicable');
-INSERT INTO access_type values(0,"read","r");
-INSERT INTO access_type values(1,"write","w");
-INSERT INTO access_type values(2,"interact","x");
-INSERT INTO access_permission values(0,"allow");
-INSERT INTO access_permission values(1,"deny");
