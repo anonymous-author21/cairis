@@ -473,6 +473,7 @@ api.add_resource(ObjectController.ObjectByNameAPI, '/api/usecases/name/<path:nam
 api.add_resource(ObjectController.ObjectsSummaryAPI, '/api/usecases/summary',endpoint='usecasessummary',resource_class_kwargs={'dao' : 'UseCaseDAO'})
 api.add_resource(ObjectController.ObjectsByMethodAndParameterAPI, '/api/usecases/name/<path:parameter_string>/requirements',endpoint='usecaserequirements',resource_class_kwargs={'dao' : 'UseCaseDAO', 'get_method' : 'get_usecase_requirements'})
 api.add_resource(ObjectController.ObjectsByMethodAndTwoParametersAPI, '/api/usecases/name/<path:p1>/environment/<path:p2>/goals',endpoint='usecasegoals', resource_class_kwargs={'dao' : 'UseCaseDAO', 'get_method' : 'get_usecase_goals'})
+api.add_resource(ObjectController.ObjectsByMethodAndTwoParametersAPI, '/api/usecases/model/environment/<path:p1>/filter_name/<path:p2>',endpoint='usecasemodel',resource_class_kwargs={'dao' : 'UseCaseDAO','get_method' : 'get_hta_model','renderer' : 'dot'})
 
 # User goal routes
 api.add_resource(ObjectController.ObjectsAPI, '/api/user_goals',endpoint='user_goals',resource_class_kwargs={'dao': 'UserGoalDAO'})
